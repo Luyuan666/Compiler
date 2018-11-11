@@ -32,11 +32,16 @@ WhileStmt : WHILE BoolEXP LC Statement* RC;
 
 ForStmt : ;
 
-BoolEXP : LRB ID ExpreOPR Expr RRB;
+BoolEXP : LRB NON? ID ExpreOPR Expr SubBoolEXP* RRB;
+SubBoolEXP : | AND ID ExpreOPR Expr
+	| OR ID ExpreOPR Expr
+	;
 
 
 Expr : FULLType (MULT FULLType)*
 	| FULLType (PLUS FULLType)*
+	| FULLType (MINUS FULLType)*
+	| FULLType (DIV FULLType)*
 	| LRB ( Expr ) RRB
 	;
 	
@@ -100,8 +105,6 @@ Stat : Type ID ASSIGN Expr SC
  ExpreOPR // possibility of boolean expressions operators
 	: LESSTHAN
 	| EQUALS
-	| AND
-	| OR
 	| NON ASSIGN
 	;
  
