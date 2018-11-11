@@ -13,7 +13,7 @@ Statement : IfStmt | WhileStmt | ForStmt | AssignStmt | Stat | Break | Continue;
 
 ClassDeclaration : 'class' ID LC Method RC;
 
-Method : 'public' Type ID LRB Type ID RRB LC Statement RC;
+Method : 'public' Type ID LRB Type ID RRB LC Statement* RC;
 
 AssignStmt : INTAssign|STRAssign|BOOAssign|CHAAssign;
 
