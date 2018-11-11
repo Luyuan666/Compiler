@@ -106,5 +106,6 @@ Stat : Type ID ASSIGN Expr SC
 	: LESSTHAN
 	| EQUALS
 	| NON ASSIGN
+	| LESSTHAN EQUALS
 	;
  
