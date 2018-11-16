@@ -104,7 +104,7 @@ thisChainStmt : id
 
 boolExpn : NON  LRB boolExp RRB;
 
-boolExp :  expre ((AND | OR) expre)* | boolExpn ;
+boolExp :  expre ((AND | OR) expre)* | boolExpn ; //？
 
 expre : rBExpre
 		| expre (MULT | DIV) expre 
@@ -126,7 +126,7 @@ elsePart : (ELSE LC? states RC?)* ;
 // § 5.4 statement details , array statement
 arrStmt : id LB integer RB ASSIGN integer SC ;
 // § 5.5 statement details , print statement
-printStmt: 'System' DOT 'out' DOT 'println' LRB fullTypes RRB SC;
+printStmt: 'System' DOT 'out' DOT 'println' LRB fullTypes RRB SC;//？
 
 
 
