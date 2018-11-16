@@ -10,40 +10,38 @@ grammar MiniJava;
   * Syntax Analysis Part 
 
  */
-// ยง1. MiniJava main structure
-miniJavaProgram : mainClass classDeclaration*;
-mainClass : 'class' id LC mainMthod RC ;
-classDeclaration : 'class' id LC fieldDeclaration* method RC ;
+// ง1. MiniJava main structure
+miniJavaProgram : mainClass (classDeclaration)* EOF;
+mainClass : 'class' ID LC mainMthod RC ;
+classDeclaration : 'class' ID LC fieldDeclaration* method+ RC ;
 states : state+ ; //statements block
-state : LC states RC
-	  | variableDeclaration
+state : variableDeclaration
 	  | ifStmt
       | printStmt
       | assignStmt
       | whileStmt
       | arrStmt
-      | BREAK SC
-      | CONTINUE SC
+      | 'break' SC
+      | 'continue' SC
+      | LC states RC
 	  ;
 
-// ยง2. details inside the mainClass
-mainMthod: 'public' 'static' 'void' 'main' LRB STR (LB RB | VARARGS ) id RRB //๏ผ
-			LC state RC ;
-
-// ยง3. details inside the normal class
-fieldDeclaration: types id SC ;
-method : 'public'? types id LRB parameters? RRB LC variableDeclaration? states retState RC ;//๏ผ
-types : INT
-	  | BOO
-	  | CHA
-      | INTARR
-	  | STR 
-	  | id
+// ง2. details inside the mainClass
+mainMthod: 'public' 'static' 'void' 'main' LRB 'String' (LB RB | VARARGS) ID RRB LC state RC ;
+// ง3. details inside the normal class
+fieldDeclaration: types ID SC ;
+method : 'public'? types ID LRB parameters? RRB LC variableDeclaration? states? retState RC ;
+types : 'int' 
+	  | 'boolean'
+	  | 'char'
+      | 'int' LB RB
+	  | 'String' 
+	  | ID
 	  ;
 
-parameters : types id ( COMMA types id )* ;
+parameters : types ID ( COMMA types ID )* ;
 
-// ยง4. the details of method
+// ง4. the details of method
 variableDeclaration : intVDec
 					|strVDec
 					|booVDec
@@ -51,35 +49,43 @@ variableDeclaration : intVDec
 					|refVDec
 					|intArrVDec
 					;
-refVDec: id  id (ASSIGN reference)? SC ;
+refVDec: ID  ID (ASSIGN reference)? SC ;
 
-chaVDec: CHA id (ASSIGN  character)? SC ;
+chaVDec: 'char' ID (ASSIGN  character)? SC ;
 
-booVDec: BOO id (ASSIGN bool)? SC ;
+booVDec: 'boolean' ID (ASSIGN bool)? SC ;
 
-strVDec: STR id (ASSIGN string)? SC ;
+strVDec: 'String' ID (ASSIGN string)? SC ; //STR ID (ASSIGN string)? SC ;
 
-intVDec: INT id (ASSIGN integer)? SC;
+intVDec: 'int' ID (ASSIGN integer)? SC;
 
-intArrVDec : INTARR id (ASSIGN ('new' INT LB PO_INTEGER RB 
+intArrVDec : 'int' LB RB ID (ASSIGN ('new' 'int' LB (PO_INTEGER | ID) RB 
 								| LC (integer | CHARACTER) (COMMA (integer | CHARACTER))* RC))? 
-								;//int array variable declaration
-id : LETTER(LETTER|DIGIT)* ;
+								;//int array variable declaration int[] num=new int[n || 3] 
+								//int[] num= {1,2,5}
+ 
 string : STRING 
 	   | STRING PLUS STRING
 	   | STRING PLUS CHARACTER 
 	   ;
-integer : (INTEGER | DIGIT)
-	    | id DOT 'length' LRB RRB
-		| id LB PO_INTEGER RB //the int array like b[3]
+integer : (PO_INTEGER | DIGIT | neInteger)
+	    | ID DOT 'length'
+		| ID LB (PO_INTEGER | ID) RB //the int array like b[3]
 		;
+neInteger: MINUS NE_INTEGER;
+
 
 character : CHARACTER
-		  | (id | string) DOT 'charAt' LRB PO_INTEGER RRB
+		  | (ID | string) DOT 'charAt' LRB (PO_INTEGER | ID)  RRB
 		  ;
 		  
-bool : BOOLEAN;
-reference : 'new' id (DOT? id LRB argList? RRB)* ;
+bool : 'true'
+	 | 'false'
+	 | ID (DOT ID)* (DOT ID LRB argList? RRB)*
+	 ;
+reference : 'new' ID LRB RRB (DOT ID LRB argList? RRB)* 
+		  | ID (DOT ID)* (DOT ID LRB argList? RRB)*
+		  ;
 argList: fullTypes (COMMA fullTypes)*;  //arguments for method call e.g. m(a,d)
 retState : 'return' fullTypes SC ;
 fullTypes : expre
@@ -90,43 +96,46 @@ fullTypes : expre
           | bool
           | string
           | integer
+          | 'this'
           ;
-simple : id MINUS integer ;
-thisChainStmt : id
-			  | (THIS DOT)? id LRB argList? simple RRB (DOT id LRB argList? RRB)* 
+thisChainStmt : ('this' DOT)? ID LRB argList? RRB (DOT ID LRB argList? RRB)*
+			  | ID
 			  ;
-// ยง5. the details of state,i.e statement
+// ง5. the details of state,i.e statement
 
 /*
  * String concatenation (+), length check (.length()), and character access (e.g. .charAt(7)). 
    The only applicable operators on characters are ==, <, and concatenation with strings. 
  */		
 
-boolExpn : NON  LRB boolExp RRB;
+boolExpn : LRB  NON  boolExp RRB;
 
-boolExp :  expre ((AND | OR) expre)* | boolExpn ; //๏ผ
+boolExp :  expre ((AND | OR) expre)* | boolExpn ;
 
 expre : rBExpre
 		| expre (MULT | DIV) expre 
 		| expre (PLUS | MINUS) expre
 		| expre (EQUALS | LESSTHAN) expre
-		| character (EQUALS | LESSTHAN) character
+		| (character | ID | integer) (EQUALS | LESSTHAN) (character | ID | integer)
 		| bool EQUALS bool
-        | (integer | id | thisChainStmt)
+        | (integer | ID | thisChainStmt)
         ;
 rBExpre : LRB expre RRB ;
   
-// ยง 5.1 statement details , while statement
-whileStmt: WHILE LRB boolExp RRB LC states RC ;
-// ยง 5.2 statement details , if statement
-ifStmt : IF LRB boolExp RRB LC? states RC? elsePart ;
-elsePart : (ELSE LC? states RC?)* ;
-// ยง 5.3 statement details , assign statement
- assignStmt : id ASSIGN expre SC ;
-// ยง 5.4 statement details , array statement
-arrStmt : id LB integer RB ASSIGN integer SC ;
-// ยง 5.5 statement details , print statement
-printStmt: 'System' DOT 'out' DOT 'println' LRB fullTypes RRB SC;//๏ผ
+// ง 5.1 statement details , while statement
+whileStmt: 'while' LRB boolExp RRB LC states RC ;
+// ง 5.2 statement details , if statement
+ifStmt : 'if' LRB (boolExp | bool) RRB (LC states? RC | state)? elseIfPart* elsePart ;
+elseIfPart: 'else' 'if' LRB (boolExp | bool) RRB (LC states? RC | state)? ;
+elsePart : ('else' (LC states RC | state))? ;
+// ง 5.3 statement details , assign statement
+ assignStmt : ID ASSIGN fullTypes SC ;
+// ง 5.4 statement details , array statement
+arrStmt : ID LB (integer | ID) RB ASSIGN (integer | ID) SC // = new int[3] {}
+		| ID ASSIGN 'new' 'int' LB (PO_INTEGER | ID) RB SC 
+		;
+// ง 5.5 statement details , print statement
+printStmt: 'System' DOT 'out' DOT 'println' LRB fullTypes RRB SC;
 
 
 
@@ -158,34 +167,20 @@ VARARGS : '...' ;
 SC : ';' ;
 COMMA : ',' ;
 DOT : '.' ;
-WS : [ \r\t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
+ID: LETTER(LETTER|DIGIT)* ;
 LETTER : [a-zA-Z_$];
 DIGIT : [0-9];
-CHARACTER : '\'' ~['\\\r\n] '\'' ;//๏ผ
-STRING :  '"' (~["\\\r\n])* '"';//๏ผ
-INTEGER : '0'
-		  | '-'? [1-9] ([1-9]|'0')*
-		  ;
-PO_INTEGER : '0'
-		     | [1-9] ([1-9]|'0')*
+CHARACTER : '\'' ~['\\\r\n] '\'' ;
+STRING :  '"' (~["\\\r\n])* '"';
+
+PO_INTEGER : [1-9] ([1-9]|'0')+ // FROM 10
 		     ;
+NE_INTEGER : [1-9] ([1-9]|'0')* ;
 
-BOOLEAN : 'true'
-		  | 'false'
-		  ;
 
-//types
-INT : 'int' ;
-BOO : 'boolean';
-CHA : 'char';
-INTARR : 'int' '[' ']';
-STR : 'String' ;
+// skip spaces, tabs, newlines, comments
+WS : [ \r\t\r\n]+ -> skip ; 
+COMMENT_BLOCK : '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' ~[\r\n]* -> skip;
 
-//key words
-THIS :'this' ;
-IF : 'if' ;
-ELSE : 'else' ;
-WHILE : 'while' ;
-BREAK : 'break';
-CONTINUE :'continue';
