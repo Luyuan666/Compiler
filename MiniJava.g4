@@ -162,8 +162,8 @@ WS : [ \r\t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
 LETTER : [a-zA-Z_$];
 DIGIT : [0-9];
-CHARACTER : '\'' ~['\\\r\n] '\'' ;
-STRING :  '"' (~["\\\r\n])* '"';
+CHARACTER : '\'' ~['\\\r\n] '\'' ;//？
+STRING :  '"' (~["\\\r\n])* '"';//？
 INTEGER : '0'
 		  | '-'? [1-9] ([1-9]|'0')*
 		  ;
