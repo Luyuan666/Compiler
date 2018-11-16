@@ -10,7 +10,7 @@ grammar MiniJava;
   * Syntax Analysis Part 
 
  */
-// ง1. MiniJava main structure
+// ยง1. MiniJava main structure
 miniJavaProgram : mainClass classDeclaration*;
 mainClass : 'class' id LC mainMthod RC ;
 classDeclaration : 'class' id LC fieldDeclaration* method RC ;
@@ -26,11 +26,11 @@ state : LC states RC
       | CONTINUE SC
 	  ;
 
-// ง2. details inside the mainClass
-mainMthod: 'public' 'static' 'void' 'main' LRB STR (LB RB | VARARGS ) id RRB 
+// ยง2. details inside the mainClass
+mainMthod: 'public' 'static' 'void' 'main' LRB STR (LB RB | VARARGS ) id RRB //๏ผ
 			LC state RC ;
 
-// ง3. details inside the normal class
+// ยง3. details inside the normal class
 fieldDeclaration: types id SC ;
 method : 'public'? types id LRB parameters? RRB LC variableDeclaration? states retState RC ;
 types : INT
@@ -43,7 +43,7 @@ types : INT
 
 parameters : types id ( COMMA types id )* ;
 
-// ง4. the details of method
+// ยง4. the details of method
 variableDeclaration : intVDec
 					|strVDec
 					|booVDec
@@ -95,7 +95,7 @@ simple : id MINUS integer ;
 thisChainStmt : id
 			  | (THIS DOT)? id LRB argList? simple RRB (DOT id LRB argList? RRB)* 
 			  ;
-// ง5. the details of state,i.e statement
+// ยง5. the details of state,i.e statement
 
 /*
  * String concatenation (+), length check (.length()), and character access (e.g. .charAt(7)). 
@@ -116,16 +116,16 @@ expre : rBExpre
         ;
 rBExpre : LRB expre RRB ;
   
-// ง 5.1 statement details , while statement
+// ยง 5.1 statement details , while statement
 whileStmt: WHILE LRB boolExp RRB LC states RC ;
-// ง 5.2 statement details , if statement
+// ยง 5.2 statement details , if statement
 ifStmt : IF LRB boolExp RRB LC? states RC? elsePart ;
 elsePart : (ELSE LC? states RC?)* ;
-// ง 5.3 statement details , assign statement
+// ยง 5.3 statement details , assign statement
  assignStmt : id ASSIGN expre SC ;
-// ง 5.4 statement details , array statement
+// ยง 5.4 statement details , array statement
 arrStmt : id LB integer RB ASSIGN integer SC ;
-// ง 5.5 statement details , print statement
+// ยง 5.5 statement details , print statement
 printStmt: 'System' DOT 'out' DOT 'println' LRB fullTypes RRB SC;
 
 
