@@ -32,7 +32,7 @@ mainMthod: 'public' 'static' 'void' 'main' LRB STR (LB RB | VARARGS ) id RRB //�
 
 // §3. details inside the normal class
 fieldDeclaration: types id SC ;
-method : 'public'? types id LRB parameters? RRB LC variableDeclaration? states retState RC ;
+method : 'public'? types id LRB parameters? RRB LC variableDeclaration? states retState RC ;//？
 types : INT
 	  | BOO
 	  | CHA
