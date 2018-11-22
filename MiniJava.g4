@@ -24,7 +24,6 @@ state : variableDeclaration
       | 'break' SC
       | 'continue' SC
       | LC states RC
-      |SC
 	  ;
 
 // §2. details inside the mainClass
@@ -50,13 +49,13 @@ variableDeclaration : intVDec
 					|refVDec
 					|intArrVDec
 					;
-refVDec: ID  ID (ASSIGN reference)? SC ;
+refVDec: ID  ID (ASSIGN (reference| thisChainStmt))? SC ;
 
 chaVDec: 'char' ID (ASSIGN  character)? SC ;
 
 booVDec: 'boolean' ID (ASSIGN bool)? SC ;
 
-strVDec: 'String' ID (ASSIGN string)? SC ; //STR ID (ASSIGN string)? SC ;
+strVDec: 'String' ID (ASSIGN string)? SC ; 
 
 intVDec: 'int' ID (ASSIGN integer)? SC;
 
@@ -64,6 +63,7 @@ intArrVDec : 'int' LB RB ID (ASSIGN ('new' 'int' LB (PO_INTEGER | ID) RB
 								| LC (integer | CHARACTER) (COMMA (integer | CHARACTER))* RC))? 
 								;//int array variable declaration int[] num=new int[n || 3] 
 								//int[] num= {1,2,5}
+
  
 string : STRING 
 	   | STRING PLUS STRING
@@ -71,6 +71,7 @@ string : STRING
 	   ;
 integer : (PO_INTEGER | DIGIT | neInteger)
 	    | ID DOT 'length'
+	    | ID DOT 'length' LRB RRB
 		| ID LB (PO_INTEGER | ID) RB //the int array like b[3]
 		;
 neInteger: MINUS NE_INTEGER;
@@ -82,16 +83,13 @@ character : CHARACTER
 		  
 bool : 'true'
 	 | 'false'
-	 | ID (DOT ID)* (DOT ID LRB argList? RRB)*
 	 | thisChainStmt
 	 ;
-reference : 'new' ID LRB RRB (DOT ID LRB argList? RRB)* 
-		  | ID (DOT ID)* (DOT ID LRB argList? RRB)*
-		  ;
+//b[8] = this.e()[new f().g(3)];
+reference : 'new' ID LRB RRB (DOT ID LRB argList? RRB)* ;
 argList: fullTypes (COMMA fullTypes)*;  //arguments for method call e.g. m(a,d)
-retState : 'return' fullTypes SC ;
-fullTypes : expre
-		  | boolExp
+retState : 'return' (fullTypes | boolExp) SC ;
+fullTypes : assignExpre
 		  | thisChainStmt
 		  |	reference 
           | character
@@ -100,46 +98,64 @@ fullTypes : expre
           | integer
           | 'this'
           ;
-thisChainStmt : ('this' DOT)? ID LRB argList? RRB (DOT ID LRB argList? RRB)*
-			  | ID
+thisChainStmt : rBIdDotMethod  //(id.m()).m()
+              | idDotMethod
+			  | ('this' DOT)? ID LRB argList? RRB (DOT ID LRB argList? RRB)*//this.d()
+			  | LRB ('this' DOT)? ID LRB argList? RRB RRB (DOT ID LRB argList? RRB)*//(this.id())......
+			  | 'new' ID LRB RRB (DOT ID LRB argList? RRB)+ //new f().g(3)...
+			  | LRB 'new' ID LRB RRB DOT ID LRB argList? RRB RRB (DOT ID LRB argList? RRB)* //(new f().g(3))...
 			  ;
-// §5. the details of state,i.e statement
+idDotMethod : idDotid (DOT ID LRB argList? RRB)*;//id.m()
+idDotid: ID (DOT ID)*
+	   | LRB ID (DOT ID)* RRB  ; //id.id
+rBIdDotMethod : LRB idDotMethod RRB (DOT ID LRB argList? RRB)*;
 
-/*
- * String concatenation (+), length check (.length()), and character access (e.g. .charAt(7)). 
+// §5. the details of state,i.e statement
+/* String concatenation (+), length check (.length()), and character access (e.g. .charAt(7)). 
    The only applicable operators on characters are ==, <, and concatenation with strings. 
  */		
 
-//boolExpn : LRB  NON  boolExp RRB;
+subBoolExpn : LRB NON? subBoolExp RRB 
+		 | NON? LRB subBoolExp RRB
+		 ;
+boolExp: boolExpn
+       | subBoolExp ((AND | OR) subBoolExp)*
+	   ;
+boolExpn: NON LRB boolExp RRB;
 
-boolExp :   NON? LRB expre (EQUALS | LESSTHAN) expre RRB subBoolExp* |NON?  expre (EQUALS | LESSTHAN) expre  subBoolExp*  ;
-subBoolExp : (AND | OR) LRB ID (EQUALS | LESSTHAN) expre RRB |(AND | OR)  ID (EQUALS | LESSTHAN) expre ;
-//expre ((AND | OR) expre)+ | boolExpn ;
-
-expre : rBExpre
-		| expre (MULT | DIV) expre 
-		| expre (PLUS | MINUS) expre
-//		| expre (EQUALS | LESSTHAN) expre
-//		| (character | ID | integer) (EQUALS | LESSTHAN) (character | ID | integer)
-		| bool EQUALS bool
-        | (integer | ID | thisChainStmt)
+subBoolExp: subBoolExpn
+		  | (assignExpre | character) (EQUALS | LESSTHAN) (assignExpre | character)
+		  | bool EQUALS bool
+		  | bool 
+		  | thisChainStmt
+		 ;
+assignExpre : rBAExpre //round brace assignStament
+		| assignExpre (MULT | DIV) assignExpre 
+		| assignExpre (PLUS | MINUS) assignExpre
+        | integer 
+        | ID 
+        | thisChainStmt
         ;
-rBExpre : LRB expre RRB ;
+rBAExpre : LRB assignExpre RRB ;
   
 // § 5.1 statement details , while statement
-whileStmt: 'while' LRB (boolExp | bool) RRB LC states RC ;
+whileStmt: 'while' LRB boolExp RRB LC states RC ;
 // § 5.2 statement details , if statement
-ifStmt : 'if' LRB (boolExp | bool) RRB (LC states? RC | state+)? elseIfPart* elsePart? ;
-
-elseIfPart: 'else' 'if' LRB (boolExp | bool) RRB (LC states? RC | state+)? ;
-
-elsePart : 'else' (LC states? RC | state+) ;
+ifStmt : 'if' LRB boolExp RRB (LC states? RC | state) elseIfPart* elsePart?
+	   | 'if' LRB boolExp RRB SC
+	   | 'if' LRB boolExp RRB elseIfPart* elsePart?
+	   ;
+elseIfPart: 'else' 'if' LRB boolExp RRB (LC states? RC | state)? ;
+elsePart : 'else' (LC states? RC | state) ;
 // § 5.3 statement details , assign statement
- assignStmt : ID ASSIGN (fullTypes | expre) SC ;
+assignStmt : ID ASSIGN fullTypes SC ;
 // § 5.4 statement details , array statement
-arrStmt : ID LB (integer | ID) RB ASSIGN (integer | ID) SC // = new int[3] {}
-		| ID ASSIGN 'new' 'int' LB (PO_INTEGER | ID) RB SC 
+//b[8] = this.e()[new f().g(3)];
+arrStmt : ID LB assignExpre RB ASSIGN assignExpre arrStmtSub? SC 
+		| ID ASSIGN 'new' 'int' LB (PO_INTEGER | ID) RB SC // = new int[3] 
 		;
+arrStmtSub: LB assignExpre RB;
+
 // § 5.5 statement details , print statement
 printStmt: 'System' DOT 'out' DOT 'println' LRB fullTypes RRB SC;
 
